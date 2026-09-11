@@ -530,6 +530,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     await loadData();
+    renderDestaques();
     render();
   } catch (err) {
     console.error('Não foi possível carregar dados do Supabase, usando dados locais:', err);
