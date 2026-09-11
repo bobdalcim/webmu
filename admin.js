@@ -86,8 +86,31 @@ function traduzErro(error) {
 
 // ---- dashboard --------------------------------------------------------
 
+let SERVERS_CACHE = [];
+
 function pendingCardHTML(s) {
   const created = new Date(s.created_at).toLocaleString('pt-BR');
+  if (s.kind === 'guild') {
+    return `
+      <div class="admin-row bracketed" data-id="${s.id}">
+        <div class="admin-row-main">
+          <p class="server-name">${escapeHtml(s.name)} <span class="stat-chip">guild</span></p>
+          <div class="server-meta">
+            <span class="stat-chip">${GAMES[s.game] || s.game}</span>
+            <span>joga em ${escapeHtml(s.server ? s.server.name : '—')}</span>
+          </div>
+          <div class="admin-row-details">
+            ${s.link ? `<a href="${escapeHtml(s.link)}" target="_blank" rel="noopener">${escapeHtml(s.link)}</a>` : ''}
+            <span>contato: ${escapeHtml(s.contact_email)}</span>
+            <span>${created}</span>
+          </div>
+        </div>
+        <div class="admin-row-actions">
+          <button class="btn btn-gold" data-approve="${s.id}">aprovar</button>
+          <button class="btn" data-reject="${s.id}">rejeitar</button>
+        </div>
+      </div>`;
+  }
   return `
     <div class="admin-row bracketed" data-id="${s.id}">
       <div class="admin-row-main">
@@ -123,8 +146,25 @@ function serverRowAdminHTML(s) {
         </div>
       </div>
       <div class="admin-row-actions">
+        <button class="btn" data-edit-server="${s.id}">editar</button>
         <button class="btn" data-toggle-online="${s.id}">${s.online ? 'marcar offline' : 'marcar online'}</button>
         <button class="btn" data-delete-server="${s.id}">excluir</button>
+      </div>
+    </div>`;
+}
+
+function guildRowAdminHTML(g) {
+  return `
+    <div class="admin-row" data-id="${g.id}">
+      <div class="admin-row-main">
+        <p class="server-name">${escapeHtml(g.name)}</p>
+        <div class="server-meta">
+          <span class="stat-chip">${GAMES[g.game] || g.game}</span>
+          <span>joga em ${escapeHtml(g.server ? g.server.name : '—')}</span>
+        </div>
+      </div>
+      <div class="admin-row-actions">
+        <button class="btn" data-delete-guild="${g.id}">excluir</button>
       </div>
     </div>`;
 }
@@ -132,7 +172,7 @@ function serverRowAdminHTML(s) {
 async function loadPending() {
   const { data, error } = await supabaseClient
     .from('submissions')
-    .select('*')
+    .select('*, server:servers(name)')
     .eq('status', 'pending')
     .order('created_at', { ascending: true });
 
@@ -158,13 +198,30 @@ async function loadServers() {
     list.innerHTML = `<div class="empty-state">erro ao carregar servidores: ${escapeHtml(error.message)}</div>`;
     return;
   }
+  SERVERS_CACHE = data;
   list.innerHTML = data.length
     ? data.map(serverRowAdminHTML).join('')
     : `<div class="empty-state">nenhum servidor cadastrado.</div>`;
 }
 
+async function loadGuilds() {
+  const { data, error } = await supabaseClient
+    .from('guilds')
+    .select('*, server:servers(name)')
+    .order('created_at', { ascending: false });
+
+  const list = $('#guilds-list');
+  if (error) {
+    list.innerHTML = `<div class="empty-state">erro ao carregar guilds: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+  list.innerHTML = data.length
+    ? data.map(guildRowAdminHTML).join('')
+    : `<div class="empty-state">nenhuma guild cadastrada.</div>`;
+}
+
 async function refreshDashboard() {
-  await Promise.all([loadPending(), loadServers()]);
+  await Promise.all([loadPending(), loadServers(), loadGuilds()]);
 }
 
 async function approveSubmission(id, btn) {
@@ -181,19 +238,27 @@ async function approveSubmission(id, btn) {
     return;
   }
 
-  const { error: insertErr } = await supabaseClient.from('servers').insert({
-    name: submission.name,
-    game: submission.game,
-    rate: submission.rate,
-    online: true,
-    phase: submission.phase,
-    tier: 'normal',
-    votes: 0,
-    link: submission.link,
-  });
+  const insert = submission.kind === 'guild'
+    ? supabaseClient.from('guilds').insert({
+      name: submission.name,
+      game: submission.game,
+      server_id: submission.server_id,
+    })
+    : supabaseClient.from('servers').insert({
+      name: submission.name,
+      game: submission.game,
+      rate: submission.rate,
+      online: true,
+      phase: submission.phase,
+      tier: 'normal',
+      votes: 0,
+      link: submission.link,
+    });
+
+  const { error: insertErr } = await insert;
 
   if (insertErr) {
-    alert('Falha ao publicar o servidor: ' + insertErr.message);
+    alert('Falha ao publicar: ' + insertErr.message);
     btn.disabled = false;
     return;
   }
@@ -226,6 +291,78 @@ async function deleteServer(id, btn) {
   refreshDashboard();
 }
 
+async function deleteGuild(id, btn) {
+  if (!confirm('Excluir esta guild da listagem pública?')) return;
+  btn.disabled = true;
+  const { error } = await supabaseClient.from('guilds').delete().eq('id', id);
+  if (error) alert('Falha ao excluir: ' + error.message);
+  refreshDashboard();
+}
+
+// ---- editar servidor --------------------------------------------------------
+
+function bindEditDialog() {
+  const dialog = $('#edit-server-dialog');
+  const form = $('#edit-server-form');
+  const errorEl = $('#edit-error');
+
+  function openEditDialog(id) {
+    const server = SERVERS_CACHE.find((s) => s.id === id);
+    if (!server) return;
+    errorEl.hidden = true;
+    form.server_id.value = server.id;
+    form.name.value = server.name;
+    form.game.value = server.game;
+    form.rate.value = server.rate;
+    form.phase.value = server.phase;
+    form.tier.value = server.tier;
+    form.link.value = server.link || '';
+    form.votes.value = server.votes;
+    form.online.checked = server.online;
+    dialog.showModal();
+  }
+
+  $$('[data-close-edit]').forEach((el) => el.addEventListener('click', () => dialog.close()));
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  $('#servers-list').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit-server]');
+    if (editBtn) openEditDialog(editBtn.dataset.editServer);
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.hidden = true;
+    const submitBtn = $('#edit-submit');
+    submitBtn.disabled = true;
+
+    const payload = {
+      name: form.name.value.trim(),
+      game: form.game.value,
+      rate: Number(form.rate.value),
+      phase: form.phase.value,
+      tier: form.tier.value,
+      link: form.link.value.trim() || null,
+      votes: Number(form.votes.value),
+      online: form.online.checked,
+    };
+
+    const { error } = await supabaseClient.from('servers').update(payload).eq('id', form.server_id.value);
+    submitBtn.disabled = false;
+
+    if (error) {
+      errorEl.textContent = 'Falha ao salvar: ' + error.message;
+      errorEl.hidden = false;
+      return;
+    }
+
+    dialog.close();
+    refreshDashboard();
+  });
+}
+
 function bindDashboardEvents() {
   $('#pending-list').addEventListener('click', (e) => {
     const approveBtn = e.target.closest('[data-approve]');
@@ -240,6 +377,13 @@ function bindDashboardEvents() {
     const deleteBtn = e.target.closest('[data-delete-server]');
     if (deleteBtn) return deleteServer(deleteBtn.dataset.deleteServer, deleteBtn);
   });
+
+  $('#guilds-list').addEventListener('click', (e) => {
+    const deleteBtn = e.target.closest('[data-delete-guild]');
+    if (deleteBtn) return deleteGuild(deleteBtn.dataset.deleteGuild, deleteBtn);
+  });
+
+  bindEditDialog();
 }
 
 // ---- roteamento por estado de sessão --------------------------------------------------

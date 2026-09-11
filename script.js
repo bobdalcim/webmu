@@ -358,31 +358,78 @@ function bindEvents() {
 
 // ---- modal: anunciar servidor --------------------------------------------------
 
+function fillGuildServerSelect() {
+  const select = $('#guild-server-select');
+  if (!select) return;
+  if (!SERVERS.length) {
+    select.innerHTML = '<option value="">nenhum servidor publicado ainda</option>';
+    return;
+  }
+  select.innerHTML = SERVERS
+    .map((s) => `<option value="${s.id}">${escapeHtml(s.name)} (${GAMES[s.game]})</option>`)
+    .join('');
+}
+
 function bindAnnounceDialog() {
   const dialog = $('#announce-dialog');
-  const form = $('#announce-form');
+  const serverForm = $('#announce-server-form');
+  const guildForm = $('#announce-guild-form');
   const errorEl = $('#announce-error');
   const successEl = $('#announce-success');
-  const submitBtn = $('#announce-submit');
+  const submitServerBtn = $('#announce-submit-server');
+  const submitGuildBtn = $('#announce-submit-guild');
+  let activeKind = 'server';
 
   function resetMessages() {
     errorEl.hidden = true;
     successEl.hidden = true;
   }
 
+  function setTab(kind) {
+    activeKind = kind;
+    $$('[data-announce-tab]').forEach((t) => t.classList.toggle('active', t.dataset.announceTab === kind));
+    serverForm.hidden = kind !== 'server';
+    guildForm.hidden = kind !== 'guild';
+    submitServerBtn.hidden = kind !== 'server';
+    submitGuildBtn.hidden = kind !== 'guild';
+    if (kind === 'guild') fillGuildServerSelect();
+  }
+
   function openDialog() {
-    form.reset();
+    serverForm.reset();
+    guildForm.reset();
     resetMessages();
+    setTab('server');
     dialog.showModal();
   }
 
+  $$('[data-announce-tab]').forEach((tab) => tab.addEventListener('click', () => setTab(tab.dataset.announceTab)));
   $$('[data-open-announce]').forEach((el) => el.addEventListener('click', openDialog));
   $$('[data-close-announce]').forEach((el) => el.addEventListener('click', () => dialog.close()));
   dialog.addEventListener('click', (e) => {
     if (e.target === dialog) dialog.close();
   });
 
-  form.addEventListener('submit', async (e) => {
+  async function submitPayload(payload, btn) {
+    submitPayload_setLoading(btn, true);
+    const { error } = await supabaseClient.from('submissions').insert(payload);
+    submitPayload_setLoading(btn, false);
+
+    if (error) {
+      console.error('Falha ao enviar anúncio:', error);
+      errorEl.textContent = 'Não foi possível enviar agora. Tente de novo em instantes.';
+      errorEl.hidden = false;
+      return false;
+    }
+    return true;
+  }
+
+  function submitPayload_setLoading(btn, loading) {
+    btn.disabled = loading;
+    btn.textContent = loading ? 'enviando...' : 'enviar para análise';
+  }
+
+  serverForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     resetMessages();
 
@@ -392,8 +439,9 @@ function bindAnnounceDialog() {
       return;
     }
 
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = Object.fromEntries(new FormData(serverForm).entries());
     const payload = {
+      kind: 'server',
       name: data.name.trim(),
       game: data.game,
       rate: Number(data.rate),
@@ -409,23 +457,45 @@ function bindAnnounceDialog() {
       return;
     }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'enviando...';
+    const ok = await submitPayload(payload, submitServerBtn);
+    if (ok) {
+      serverForm.reset();
+      successEl.hidden = false;
+    }
+  });
 
-    const { error } = await supabaseClient.from('submissions').insert(payload);
+  guildForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    resetMessages();
 
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'enviar para análise';
-
-    if (error) {
-      console.error('Falha ao enviar anúncio:', error);
-      errorEl.textContent = 'Não foi possível enviar agora. Tente de novo em instantes.';
+    if (!supabaseClient) {
+      errorEl.textContent = 'Envio indisponível no momento (sem conexão com o servidor). Tente novamente mais tarde.';
       errorEl.hidden = false;
       return;
     }
 
-    form.reset();
-    successEl.hidden = false;
+    const data = Object.fromEntries(new FormData(guildForm).entries());
+    const payload = {
+      kind: 'guild',
+      name: data.name.trim(),
+      game: data.game,
+      server_id: data.server_id || null,
+      link: data.link.trim() || null,
+      contact_email: data.contact_email.trim(),
+      status: 'pending',
+    };
+
+    if (!payload.name || !payload.server_id || !payload.contact_email) {
+      errorEl.textContent = 'Preencha o nome da guild, escolha o servidor e informe seu e-mail.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    const ok = await submitPayload(payload, submitGuildBtn);
+    if (ok) {
+      guildForm.reset();
+      successEl.hidden = false;
+    }
   });
 }
 

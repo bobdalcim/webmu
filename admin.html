@@ -67,9 +67,87 @@
     <p class="section-title" style="margin-top:40px">Servidores publicados</p>
     <div id="servers-list" class="admin-list"></div>
 
+    <p class="section-title" style="margin-top:40px">Guilds publicadas</p>
+    <div id="guilds-list" class="admin-list"></div>
+
   </section>
 
 </div>
+
+<!-- MODAL: EDITAR SERVIDOR -->
+<dialog id="edit-server-dialog" class="announce-dialog bracketed">
+  <form id="edit-server-form" method="dialog">
+    <div class="dialog-head">
+      <p class="dialog-title">Editar servidor</p>
+      <button type="button" class="dialog-close" data-close-edit aria-label="fechar">✕</button>
+    </div>
+
+    <input type="hidden" name="server_id">
+
+    <label class="field">
+      <span>Nome do servidor</span>
+      <input type="text" name="name" required maxlength="80">
+    </label>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Jogo</span>
+        <select name="game" required>
+          <option value="mu">Mu Online</option>
+          <option value="priston">Priston Tale</option>
+          <option value="ragnarok">Ragnarok</option>
+          <option value="tibia">Tibia</option>
+          <option value="pw">Perfect World</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Rate de EXP</span>
+        <input type="number" name="rate" required min="1">
+      </label>
+    </div>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Fase</span>
+        <select name="phase" required>
+          <option value="lancamento">lançamento</option>
+          <option value="open-beta">open beta</option>
+          <option value="maturo">mature / estável</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Destaque</span>
+        <select name="tier" required>
+          <option value="normal">normal</option>
+          <option value="rare">raro (azul)</option>
+          <option value="legend">lendário (dourado)</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Link do site</span>
+      <input type="url" name="link">
+    </label>
+
+    <label class="field">
+      <span>Votos</span>
+      <input type="number" name="votes" required min="0">
+    </label>
+
+    <label class="field" style="flex-direction:row;align-items:center;gap:8px">
+      <input type="checkbox" name="online" style="width:auto">
+      <span>servidor online</span>
+    </label>
+
+    <p class="dialog-error" id="edit-error" hidden></p>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn" data-close-edit>cancelar</button>
+      <button type="submit" class="btn btn-gold" id="edit-submit">salvar</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>

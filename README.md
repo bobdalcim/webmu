@@ -43,9 +43,9 @@ RLS: leitura pública em `servers`/`guilds`/`votes`; inserção pública só em 
 
 Para mexer no schema depois, use o painel do Supabase (SQL Editor) ou me peça para rodar uma migration.
 
-## Anunciar servidor (formulário público)
+## Anunciar servidor / guild (formulário público)
 
-O botão "Anunciar servidor" abre um modal que grava direto na tabela `submissions` (nome, jogo, rate, fase, link, e-mail de contato) com `status = 'pending'`. Essa tabela **não tem policy de leitura pública** — só admin (ver abaixo) ou SQL Editor conseguem ler, então o e-mail de contato nunca fica exposto no site.
+O botão "Anunciar" abre um modal com duas abas — **servidor** (nome, jogo, rate, fase, link, e-mail) e **guild** (nome, jogo, servidor ao qual pertence — escolhido de uma lista dos servidores já publicados, link opcional, e-mail). Os dois gravam na mesma tabela `submissions` (com uma coluna `kind` diferenciando) com `status = 'pending'`. Essa tabela **não tem policy de leitura pública** — só admin (ver abaixo) ou SQL Editor conseguem ler, então o e-mail de contato nunca fica exposto no site.
 
 ## Painel de moderação (`/admin.html`)
 
@@ -61,16 +61,23 @@ insert into admins (user_id, email)
 select id, email from auth.users where email = 'seu-email@exemplo.com';
 ```
 
-3. Depois disso, logar em `/admin.html` mostra o painel: envios pendentes (aprovar/rejeitar) e servidores publicados (marcar online/offline, excluir).
+3. Depois disso, logar em `/admin.html` mostra o painel:
+   - **Envios pendentes** — aprovar (publica em `servers`/`guilds`) ou rejeitar, servidor ou guild.
+   - **Servidores publicados** — **editar** (nome, jogo, rate, fase, destaque/tier, link, votos, online/offline), ou excluir.
+   - **Guilds publicadas** — excluir.
 
-Dica opcional: se a confirmação de e-mail no cadastro incomodar (você é o único admin mesmo), dá pra desligar em **Supabase → Authentication → Sign In / Providers → Email → "Confirm email"**.
+Dica opcional: se a confirmação de e-mail no cadastro incomodar (você é o único admin mesmo), dá pra desligar em **Supabase → Authentication → Sign In / Providers → Email → "Confirm email"**. Também vale ativar **"Leaked password protection"** em Authentication → Policies (bloqueia senhas conhecidas por vazamento) — o Security Advisor do Supabase aponta isso, é 1 toggle no painel, não uma migration.
 
 Como funciona por baixo: a tabela `admins` (sem nenhuma policy pública) guarda quem é admin; uma função `is_admin()` no banco checa isso; e as policies de escrita em `servers`/`guilds`/`submissions` só liberam `insert`/`update`/`delete` pra quem `is_admin()` retorna verdadeiro. Alguém logado sem estar na tabela `admins` só vê a tela de "sem acesso".
 
+## Deploy: pendência do Vercel
+
+O ambiente onde estou rodando tem um **conector do Vercel instalado mas desconectado** (`needs_reconnect`). Pra eu conseguir fazer o deploy diretamente por aqui, reconecte-o nas configurações de conectores do Claude. Sem isso, segue o passo a passo manual da seção "Deploy no Vercel" acima (é rápido, uns 2 minutos).
+
 ## Próximos passos
 
-- Formulário de envio de guilds (hoje só servidores podem ser anunciados).
 - Destaques pagos (planos) vindos de uma tabela `sponsored` em vez do array fixo em `script.js`.
-- Editar campos do servidor (não só online/offline) direto no painel.
+- Editar guilds no painel (hoje só dá pra excluir).
+- Paginação/busca no painel de moderação (hoje carrega tudo de uma vez — ok pro volume atual).
 
 Posso configurar qualquer um desses quando quiser — é só pedir.

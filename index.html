@@ -102,15 +102,20 @@
 
 </div>
 
-<!-- MODAL: ANUNCIAR SERVIDOR -->
+<!-- MODAL: ANUNCIAR SERVIDOR / GUILD -->
 <dialog id="announce-dialog" class="announce-dialog bracketed">
-  <form id="announce-form" method="dialog">
-    <div class="dialog-head">
-      <p class="dialog-title">Anunciar servidor</p>
-      <button type="button" class="dialog-close" data-close-announce aria-label="fechar">✕</button>
-    </div>
-    <p class="dialog-sub">Envio gratuito. Seu servidor entra em análise e aparece na listagem após aprovação.</p>
+  <div class="dialog-head">
+    <p class="dialog-title">Anunciar</p>
+    <button type="button" class="dialog-close" data-close-announce aria-label="fechar">✕</button>
+  </div>
+  <p class="dialog-sub">Envio gratuito. Entra em análise e aparece na listagem após aprovação.</p>
 
+  <div class="auth-tabs">
+    <button type="button" class="auth-tab active" data-announce-tab="server">servidor</button>
+    <button type="button" class="auth-tab" data-announce-tab="guild">guild</button>
+  </div>
+
+  <form id="announce-server-form" class="announce-form">
     <label class="field">
       <span>Nome do servidor</span>
       <input type="text" name="name" required maxlength="80" placeholder="ex: Dragon MU Classic">
@@ -152,15 +157,52 @@
       <span>Seu e-mail (não é exibido publicamente)</span>
       <input type="email" name="contact_email" required placeholder="voce@exemplo.com">
     </label>
-
-    <p class="dialog-error" id="announce-error" hidden></p>
-    <p class="dialog-success" id="announce-success" hidden>Recebido! Seu servidor entrou na fila de aprovação.</p>
-
-    <div class="dialog-actions">
-      <button type="button" class="btn" data-close-announce>cancelar</button>
-      <button type="submit" class="btn btn-gold" id="announce-submit">enviar para análise</button>
-    </div>
   </form>
+
+  <form id="announce-guild-form" class="announce-form" hidden>
+    <label class="field">
+      <span>Nome da guild</span>
+      <input type="text" name="name" maxlength="80" placeholder="ex: Fenix Wars">
+    </label>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Jogo</span>
+        <select name="game">
+          <option value="mu">Mu Online</option>
+          <option value="priston">Priston Tale</option>
+          <option value="ragnarok">Ragnarok</option>
+          <option value="tibia">Tibia</option>
+          <option value="pw">Perfect World</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Servidor</span>
+        <select name="server_id" id="guild-server-select">
+          <option value="">carregando...</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Link (Discord, site, etc — opcional)</span>
+      <input type="url" name="link" placeholder="https://...">
+    </label>
+
+    <label class="field">
+      <span>Seu e-mail (não é exibido publicamente)</span>
+      <input type="email" name="contact_email" required placeholder="voce@exemplo.com">
+    </label>
+  </form>
+
+  <p class="dialog-error" id="announce-error" hidden></p>
+  <p class="dialog-success" id="announce-success" hidden>Recebido! Entrou na fila de aprovação.</p>
+
+  <div class="dialog-actions">
+    <button type="button" class="btn" data-close-announce>cancelar</button>
+    <button type="submit" form="announce-server-form" class="btn btn-gold announce-submit" id="announce-submit-server">enviar para análise</button>
+    <button type="submit" form="announce-guild-form" class="btn btn-gold announce-submit" id="announce-submit-guild" hidden>enviar para análise</button>
+  </div>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
