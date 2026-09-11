@@ -137,6 +137,22 @@ async function loadData() {
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function safeLink(url) {
+  if (!url) return '#';
+  try {
+    const u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '#';
+  } catch {
+    return '#';
+  }
+}
+
 function statusDot(online) {
   return `<span class="status-dot${online ? ' online' : ''}"></span>${online ? 'online' : 'offline'}`;
 }
@@ -153,7 +169,7 @@ function serverRowHTML(s) {
     <div class="server-row ${tierClass(s.tier)}" data-id="${s.id}">
       <div class="server-icon"></div>
       <div>
-        <p class="server-name">${s.name}</p>
+        <p class="server-name">${escapeHtml(s.name)}</p>
         <div class="server-meta">
           <span class="stat-chip">${GAMES[s.game]}</span>
           <span class="stat-chip">rate x${s.rate}</span>
@@ -163,7 +179,7 @@ function serverRowHTML(s) {
       <button class="server-votes${voted ? ' voted' : ''}" data-vote="${s.id}" ${voted ? 'disabled' : ''}>
         ${voted ? 'votado ✓' : 'votar'}<b>${s.votes}</b>
       </button>
-      <a class="btn" href="#">ver detalhes</a>
+      <a class="btn" href="${safeLink(s.link)}" target="_blank" rel="noopener">ver detalhes</a>
     </div>`;
 }
 
@@ -172,8 +188,8 @@ function guildRowHTML(g) {
     <div class="guild-row bracketed">
       <div class="guild-icon"></div>
       <div>
-        <p class="server-name">${g.name}</p>
-        <div class="server-meta"><span class="stat-chip">guild</span><span>joga em ${g.serverName}</span></div>
+        <p class="server-name">${escapeHtml(g.name)}</p>
+        <div class="server-meta"><span class="stat-chip">guild</span><span>joga em ${escapeHtml(g.serverName)}</span></div>
       </div>
       <a class="btn" href="#">ver guild</a>
     </div>`;
@@ -233,7 +249,7 @@ function renderDestaques() {
   grid.innerHTML = DESTAQUES.map((d) => `
     <div class="destaque-card bracketed">
       <div class="destaque-banner">banner 728×90</div>
-      <p class="destaque-title">${d.title}</p>
+      <p class="destaque-title">${escapeHtml(d.title)}</p>
       <div class="destaque-meta">
         <span class="stat-chip">${GAMES[d.game]}</span>
         <span class="stat-chip">rate x${d.rate}</span>
@@ -349,9 +365,83 @@ function bindEvents() {
   });
 }
 
+// ---- modal: anunciar servidor --------------------------------------------------
+
+function bindAnnounceDialog() {
+  const dialog = $('#announce-dialog');
+  const form = $('#announce-form');
+  const errorEl = $('#announce-error');
+  const successEl = $('#announce-success');
+  const submitBtn = $('#announce-submit');
+
+  function resetMessages() {
+    errorEl.hidden = true;
+    successEl.hidden = true;
+  }
+
+  function openDialog() {
+    form.reset();
+    resetMessages();
+    dialog.showModal();
+  }
+
+  $$('[data-open-announce]').forEach((el) => el.addEventListener('click', openDialog));
+  $$('[data-close-announce]').forEach((el) => el.addEventListener('click', () => dialog.close()));
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    resetMessages();
+
+    if (!supabaseClient) {
+      errorEl.textContent = 'Envio indisponível no momento (sem conexão com o servidor). Tente novamente mais tarde.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    const data = Object.fromEntries(new FormData(form).entries());
+    const payload = {
+      name: data.name.trim(),
+      game: data.game,
+      rate: Number(data.rate),
+      phase: data.phase,
+      link: data.link.trim(),
+      contact_email: data.contact_email.trim(),
+      status: 'pending',
+    };
+
+    if (!payload.name || !payload.link || !payload.contact_email || !(payload.rate > 0)) {
+      errorEl.textContent = 'Preencha todos os campos corretamente.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'enviando...';
+
+    const { error } = await supabaseClient.from('submissions').insert(payload);
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'enviar para análise';
+
+    if (error) {
+      console.error('Falha ao enviar anúncio:', error);
+      errorEl.textContent = 'Não foi possível enviar agora. Tente de novo em instantes.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    form.reset();
+    successEl.hidden = false;
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   renderDestaques();
   bindEvents();
+  bindAnnounceDialog();
   render();
 
   try {

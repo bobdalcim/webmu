@@ -43,10 +43,32 @@ RLS: leitura pública em `servers`/`guilds`/`votes`; inserção pública só em 
 
 Para mexer no schema depois, use o painel do Supabase (SQL Editor) ou me peça para rodar uma migration.
 
+## Anunciar servidor (formulário público)
+
+O botão "Anunciar servidor" abre um modal que grava direto na tabela `submissions` (nome, jogo, rate, fase, link, e-mail de contato) com `status = 'pending'`. Essa tabela **não tem policy de leitura pública** — só é acessível via SQL Editor do Supabase ou pedindo pra mim, então o e-mail de contato nunca fica exposto no site.
+
+Pra aprovar um envio e ele aparecer na listagem, rode no SQL Editor do projeto `classifimudos` (ou peça pra mim rodar):
+
+```sql
+-- ver pendentes
+select id, name, game, rate, phase, link, contact_email, created_at
+from submissions where status = 'pending' order by created_at;
+
+-- aprovar um (troca o id abaixo)
+insert into servers (name, game, rate, online, phase, tier, votes, link)
+select name, game, rate, true, phase, 'normal', 0, link
+from submissions where id = '<uuid-da-submissao>';
+
+update submissions set status = 'approved' where id = '<uuid-da-submissao>';
+
+-- ou rejeitar
+update submissions set status = 'rejected' where id = '<uuid-da-submissao>';
+```
+
 ## Próximos passos
 
-- Formulário de "Anunciar servidor" gravando direto no Supabase (hoje é só um link/CTA visual).
-- Painel de moderação para aprovar servidores/guilds enviados por usuários.
+- Painel de moderação (com login) para aprovar servidores direto no site, sem precisar do SQL Editor.
+- Formulário de envio de guilds (hoje só servidores podem ser anunciados).
 - Destaques pagos (planos) vindos de uma tabela `sponsored` em vez do array fixo em `script.js`.
 
 Posso configurar qualquer um desses quando quiser — é só pedir.

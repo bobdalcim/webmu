@@ -21,14 +21,14 @@
       <a href="#">Servidores</a>
       <a href="#">Guilds</a>
       <a href="#">Ranking</a>
-      <a href="#">Anunciar</a>
+      <button class="btn-link" data-open-announce>Anunciar</button>
     </nav>
     <div class="header-right">
       <div class="search-box">
         <input type="text" id="search-input" placeholder="buscar servidor, jogo...">
       </div>
       <a class="btn" href="#">Entrar</a>
-      <a class="btn btn-gold" href="#">Anunciar servidor</a>
+      <button class="btn btn-gold" data-open-announce>Anunciar servidor</button>
     </div>
   </header>
 
@@ -91,7 +91,7 @@
     <div class="cta-final bracketed">
       <h3>Tem um servidor privado?</h3>
       <p>Divulgue seu servidor ou guild aqui. Planos por dia, com posição de destaque.</p>
-      <a class="btn btn-gold" href="#">ver planos de anúncio</a>
+      <button class="btn btn-gold" data-open-announce>anunciar servidor grátis</button>
     </div>
   </section>
 
@@ -101,6 +101,67 @@
   </footer>
 
 </div>
+
+<!-- MODAL: ANUNCIAR SERVIDOR -->
+<dialog id="announce-dialog" class="announce-dialog bracketed">
+  <form id="announce-form" method="dialog">
+    <div class="dialog-head">
+      <p class="dialog-title">Anunciar servidor</p>
+      <button type="button" class="dialog-close" data-close-announce aria-label="fechar">✕</button>
+    </div>
+    <p class="dialog-sub">Envio gratuito. Seu servidor entra em análise e aparece na listagem após aprovação.</p>
+
+    <label class="field">
+      <span>Nome do servidor</span>
+      <input type="text" name="name" required maxlength="80" placeholder="ex: Dragon MU Classic">
+    </label>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Jogo</span>
+        <select name="game" required>
+          <option value="mu">Mu Online</option>
+          <option value="priston">Priston Tale</option>
+          <option value="ragnarok">Ragnarok</option>
+          <option value="tibia">Tibia</option>
+          <option value="pw">Perfect World</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Rate de EXP</span>
+        <input type="number" name="rate" required min="1" placeholder="ex: 1000">
+      </label>
+    </div>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Fase</span>
+        <select name="phase" required>
+          <option value="lancamento">lançamento</option>
+          <option value="open-beta">open beta</option>
+          <option value="maturo">mature / estável</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Link do site</span>
+        <input type="url" name="link" required placeholder="https://...">
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Seu e-mail (não é exibido publicamente)</span>
+      <input type="email" name="contact_email" required placeholder="voce@exemplo.com">
+    </label>
+
+    <p class="dialog-error" id="announce-error" hidden></p>
+    <p class="dialog-success" id="announce-success" hidden>Recebido! Seu servidor entrou na fila de aprovação.</p>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn" data-close-announce>cancelar</button>
+      <button type="submit" class="btn btn-gold" id="announce-submit">enviar para análise</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
