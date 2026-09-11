@@ -45,30 +45,32 @@ Para mexer no schema depois, use o painel do Supabase (SQL Editor) ou me peça p
 
 ## Anunciar servidor (formulário público)
 
-O botão "Anunciar servidor" abre um modal que grava direto na tabela `submissions` (nome, jogo, rate, fase, link, e-mail de contato) com `status = 'pending'`. Essa tabela **não tem policy de leitura pública** — só é acessível via SQL Editor do Supabase ou pedindo pra mim, então o e-mail de contato nunca fica exposto no site.
+O botão "Anunciar servidor" abre um modal que grava direto na tabela `submissions` (nome, jogo, rate, fase, link, e-mail de contato) com `status = 'pending'`. Essa tabela **não tem policy de leitura pública** — só admin (ver abaixo) ou SQL Editor conseguem ler, então o e-mail de contato nunca fica exposto no site.
 
-Pra aprovar um envio e ele aparecer na listagem, rode no SQL Editor do projeto `classifimudos` (ou peça pra mim rodar):
+## Painel de moderação (`/admin.html`)
+
+Link discreto no rodapé do site (`admin.html`). Usa login de verdade via Supabase Auth (e-mail/senha) — nada de senha fixa no código.
+
+**Como virar admin pela primeira vez:**
+
+1. Abra `/admin.html` → aba **criar conta** → cadastre seu e-mail/senha (ex: `bobdalcimoficial@gmail.com`). Se o projeto tiver confirmação de e-mail ativada, confirme pelo link recebido antes do próximo passo.
+2. Criar conta sozinho **não dá acesso** — é só um login. Me avise (ou rode no SQL Editor) para liberar:
 
 ```sql
--- ver pendentes
-select id, name, game, rate, phase, link, contact_email, created_at
-from submissions where status = 'pending' order by created_at;
-
--- aprovar um (troca o id abaixo)
-insert into servers (name, game, rate, online, phase, tier, votes, link)
-select name, game, rate, true, phase, 'normal', 0, link
-from submissions where id = '<uuid-da-submissao>';
-
-update submissions set status = 'approved' where id = '<uuid-da-submissao>';
-
--- ou rejeitar
-update submissions set status = 'rejected' where id = '<uuid-da-submissao>';
+insert into admins (user_id, email)
+select id, email from auth.users where email = 'seu-email@exemplo.com';
 ```
+
+3. Depois disso, logar em `/admin.html` mostra o painel: envios pendentes (aprovar/rejeitar) e servidores publicados (marcar online/offline, excluir).
+
+Dica opcional: se a confirmação de e-mail no cadastro incomodar (você é o único admin mesmo), dá pra desligar em **Supabase → Authentication → Sign In / Providers → Email → "Confirm email"**.
+
+Como funciona por baixo: a tabela `admins` (sem nenhuma policy pública) guarda quem é admin; uma função `is_admin()` no banco checa isso; e as policies de escrita em `servers`/`guilds`/`submissions` só liberam `insert`/`update`/`delete` pra quem `is_admin()` retorna verdadeiro. Alguém logado sem estar na tabela `admins` só vê a tela de "sem acesso".
 
 ## Próximos passos
 
-- Painel de moderação (com login) para aprovar servidores direto no site, sem precisar do SQL Editor.
 - Formulário de envio de guilds (hoje só servidores podem ser anunciados).
 - Destaques pagos (planos) vindos de uma tabela `sponsored` em vez do array fixo em `script.js`.
+- Editar campos do servidor (não só online/offline) direto no painel.
 
 Posso configurar qualquer um desses quando quiser — é só pedir.

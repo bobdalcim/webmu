@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel admin — classifiMUdos</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <a class="logo" href="index.html">classifi<span>MU</span>dos</a>
+    <nav><a href="index.html">← voltar ao site</a></nav>
+    <div class="header-right">
+      <span class="admin-whoami" id="whoami" hidden></span>
+      <button class="btn" id="sign-out-btn" hidden>sair</button>
+    </div>
+  </header>
+
+  <!-- LOGIN / CADASTRO -->
+  <section id="auth-section">
+    <div class="auth-card bracketed">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="signin">entrar</button>
+        <button class="auth-tab" data-tab="signup">criar conta</button>
+      </div>
+
+      <form id="signin-form" class="auth-form">
+        <label class="field"><span>E-mail</span><input type="email" name="email" required></label>
+        <label class="field"><span>Senha</span><input type="password" name="password" required></label>
+        <p class="dialog-error" id="signin-error" hidden></p>
+        <button type="submit" class="btn btn-gold">entrar</button>
+      </form>
+
+      <form id="signup-form" class="auth-form" hidden>
+        <p class="dialog-sub">Criar conta não dá acesso de admin sozinho — depois de criar, peça pro dono do site liberar seu acesso.</p>
+        <label class="field"><span>E-mail</span><input type="email" name="email" required></label>
+        <label class="field"><span>Senha (mín. 6 caracteres)</span><input type="password" name="password" required minlength="6"></label>
+        <p class="dialog-error" id="signup-error" hidden></p>
+        <p class="dialog-success" id="signup-success" hidden></p>
+        <button type="submit" class="btn btn-gold">criar conta</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- SEM PERMISSÃO -->
+  <section id="no-access-section" hidden>
+    <div class="cta-final bracketed">
+      <h3>Sem acesso de admin</h3>
+      <p id="no-access-msg">Sua conta está autenticada, mas ainda não tem permissão de administrador.</p>
+      <button class="btn" id="no-access-signout">sair</button>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-section" hidden>
+
+    <p class="section-title">Envios pendentes <small id="pending-count"></small></p>
+    <div id="pending-list" class="admin-list"></div>
+
+    <p class="section-title" style="margin-top:40px">Servidores publicados</p>
+    <div id="servers-list" class="admin-list"></div>
+
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

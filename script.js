@@ -1,13 +1,4 @@
-// ---- Supabase --------------------------------------------------------
-// Chave "anon"/"publishable" — feita para ficar no client, protegida pelas
-// políticas de RLS do banco (só permitem leitura pública e inserção de votos).
-
-const SUPABASE_URL = 'https://qgrdlglzadsriluzeren.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_-s554Nv0F7DFE0aXn3jWwA_ti6iXccm';
-
-const supabaseClient = window.supabase
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+// supabaseClient vem de supabase-config.js (incluído antes deste script).
 
 // ---- dados de fallback --------------------------------------------------
 // Usados só se o Supabase estiver fora do ar / sem internet, para o site
