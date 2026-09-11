@@ -61,7 +61,13 @@
   <!-- DASHBOARD -->
   <section id="dashboard-section" hidden>
 
-    <p class="section-title">Envios pendentes <small id="pending-count"></small></p>
+    <p class="section-title">
+      Destaques da semana
+      <small><button type="button" class="btn" id="new-destaque-btn" style="margin-left:10px">+ novo destaque</button></small>
+    </p>
+    <div id="destaques-list" class="admin-list"></div>
+
+    <p class="section-title" style="margin-top:40px">Envios pendentes <small id="pending-count"></small></p>
     <div id="pending-list" class="admin-list"></div>
 
     <p class="section-title" style="margin-top:40px">Servidores publicados</p>
@@ -145,6 +151,69 @@
     <div class="dialog-actions">
       <button type="button" class="btn" data-close-edit>cancelar</button>
       <button type="submit" class="btn btn-gold" id="edit-submit">salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- MODAL: EDITAR DESTAQUE -->
+<dialog id="edit-destaque-dialog" class="announce-dialog bracketed">
+  <form id="edit-destaque-form">
+    <div class="dialog-head">
+      <p class="dialog-title" id="destaque-dialog-title">Novo destaque</p>
+      <button type="button" class="dialog-close" data-close-destaque aria-label="fechar">✕</button>
+    </div>
+
+    <input type="hidden" name="destaque_id">
+
+    <label class="field">
+      <span>Título</span>
+      <input type="text" name="title" required maxlength="80" placeholder="ex: Legend MU Season 19">
+    </label>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Jogo</span>
+        <select name="game" required>
+          <option value="mu">Mu Online</option>
+          <option value="priston">Priston Tale</option>
+          <option value="ragnarok">Ragnarok</option>
+          <option value="tibia">Tibia</option>
+          <option value="pw">Perfect World</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Rate de EXP (opcional)</span>
+        <input type="number" name="rate" min="1">
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Link (site do servidor/patrocinador)</span>
+      <input type="url" name="link" placeholder="https://...">
+    </label>
+
+    <label class="field">
+      <span>Banner (728×90 recomendado, máx 2MB)</span>
+      <input type="file" name="banner_file" accept="image/*">
+    </label>
+    <img id="destaque-banner-preview" src="" alt="preview" style="max-width:100%;display:none;margin:-6px 0 14px;border:1px solid var(--border)">
+
+    <div class="field-row">
+      <label class="field">
+        <span>Posição (ordem, menor aparece primeiro)</span>
+        <input type="number" name="position" required min="0" value="0">
+      </label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:16px;padding-top:18px">
+        <span style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="online" style="width:auto" checked> online</span>
+        <span style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="active" style="width:auto" checked> ativo</span>
+      </label>
+    </div>
+
+    <p class="dialog-error" id="destaque-error" hidden></p>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn" data-close-destaque>cancelar</button>
+      <button type="submit" class="btn btn-gold" id="destaque-submit">salvar</button>
     </div>
   </form>
 </dialog>

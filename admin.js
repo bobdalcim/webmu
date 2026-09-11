@@ -87,6 +87,7 @@ function traduzErro(error) {
 // ---- dashboard --------------------------------------------------------
 
 let SERVERS_CACHE = [];
+let DESTAQUES_CACHE = [];
 
 function pendingCardHTML(s) {
   const created = new Date(s.created_at).toLocaleString('pt-BR');
@@ -149,6 +150,32 @@ function serverRowAdminHTML(s) {
         <button class="btn" data-edit-server="${s.id}">editar</button>
         <button class="btn" data-toggle-online="${s.id}">${s.online ? 'marcar offline' : 'marcar online'}</button>
         <button class="btn" data-delete-server="${s.id}">excluir</button>
+      </div>
+    </div>`;
+}
+
+function destaqueRowAdminHTML(d) {
+  const thumb = d.banner_url
+    ? `<img src="${escapeHtml(d.banner_url)}" alt="" style="width:64px;height:28px;object-fit:cover;border:1px solid var(--border);flex-shrink:0">`
+    : `<div style="width:64px;height:28px;border:1px dashed var(--border);flex-shrink:0"></div>`;
+  return `
+    <div class="admin-row" data-id="${d.id}">
+      <div class="admin-row-main" style="display:flex;align-items:center;gap:12px">
+        ${thumb}
+        <div>
+          <p class="server-name">${escapeHtml(d.title)}</p>
+          <div class="server-meta">
+            <span class="stat-chip">${GAMES[d.game] || d.game}</span>
+            ${d.rate ? `<span class="stat-chip">rate x${d.rate}</span>` : ''}
+            <span class="stat-chip">pos. ${d.position}</span>
+            <span><span class="status-dot${d.online ? ' online' : ''}"></span>${d.online ? 'online' : 'offline'}</span>
+            ${d.active ? '' : '<span class="stat-chip">inativo</span>'}
+          </div>
+        </div>
+      </div>
+      <div class="admin-row-actions">
+        <button class="btn" data-edit-destaque="${d.id}">editar</button>
+        <button class="btn" data-delete-destaque="${d.id}">excluir</button>
       </div>
     </div>`;
 }
@@ -220,8 +247,25 @@ async function loadGuilds() {
     : `<div class="empty-state">nenhuma guild cadastrada.</div>`;
 }
 
+async function loadDestaques() {
+  const { data, error } = await supabaseClient
+    .from('destaques')
+    .select('*')
+    .order('position', { ascending: true });
+
+  const list = $('#destaques-list');
+  if (error) {
+    list.innerHTML = `<div class="empty-state">erro ao carregar destaques: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+  DESTAQUES_CACHE = data;
+  list.innerHTML = data.length
+    ? data.map(destaqueRowAdminHTML).join('')
+    : `<div class="empty-state">nenhum destaque cadastrado.</div>`;
+}
+
 async function refreshDashboard() {
-  await Promise.all([loadPending(), loadServers(), loadGuilds()]);
+  await Promise.all([loadPending(), loadServers(), loadGuilds(), loadDestaques()]);
 }
 
 async function approveSubmission(id, btn) {
@@ -299,6 +343,14 @@ async function deleteGuild(id, btn) {
   refreshDashboard();
 }
 
+async function deleteDestaque(id, btn) {
+  if (!confirm('Excluir este destaque?')) return;
+  btn.disabled = true;
+  const { error } = await supabaseClient.from('destaques').delete().eq('id', id);
+  if (error) alert('Falha ao excluir: ' + error.message);
+  refreshDashboard();
+}
+
 // ---- editar servidor --------------------------------------------------------
 
 function bindEditDialog() {
@@ -363,6 +415,134 @@ function bindEditDialog() {
   });
 }
 
+// ---- editar/criar destaque --------------------------------------------------------
+
+function bindDestaqueDialog() {
+  const dialog = $('#edit-destaque-dialog');
+  const form = $('#edit-destaque-form');
+  const errorEl = $('#destaque-error');
+  const submitBtn = $('#destaque-submit');
+  const titleEl = $('#destaque-dialog-title');
+  const preview = $('#destaque-banner-preview');
+  const fileInput = form.banner_file;
+  let currentBannerUrl = null;
+
+  function resetPreview(url) {
+    currentBannerUrl = url || null;
+    if (currentBannerUrl) {
+      preview.src = currentBannerUrl;
+      preview.style.display = 'block';
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+    }
+  }
+
+  function openNew() {
+    form.reset();
+    errorEl.hidden = true;
+    form.destaque_id.value = '';
+    titleEl.textContent = 'Novo destaque';
+    resetPreview(null);
+    dialog.showModal();
+  }
+
+  function openEdit(id) {
+    const d = DESTAQUES_CACHE.find((x) => x.id === id);
+    if (!d) return;
+    form.reset();
+    errorEl.hidden = true;
+    form.destaque_id.value = d.id;
+    form.title.value = d.title;
+    form.game.value = d.game;
+    form.rate.value = d.rate || '';
+    form.link.value = d.link || '';
+    form.position.value = d.position;
+    form.online.checked = d.online;
+    form.active.checked = d.active;
+    titleEl.textContent = 'Editar destaque';
+    resetPreview(d.banner_url);
+    dialog.showModal();
+  }
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      errorEl.textContent = 'Imagem maior que 2MB. Escolha um arquivo menor.';
+      errorEl.hidden = false;
+      fileInput.value = '';
+      return;
+    }
+    errorEl.hidden = true;
+    const reader = new FileReader();
+    reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  });
+
+  $('#new-destaque-btn').addEventListener('click', openNew);
+  $$('[data-close-destaque]').forEach((el) => el.addEventListener('click', () => dialog.close()));
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  $('#destaques-list').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit-destaque]');
+    if (editBtn) openEdit(editBtn.dataset.editDestaque);
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.hidden = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'salvando...';
+
+    let bannerUrl = currentBannerUrl;
+    const file = fileInput.files[0];
+
+    if (file) {
+      const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const { error: uploadErr } = await supabaseClient.storage.from('banners').upload(path, file, { upsert: false });
+      if (uploadErr) {
+        errorEl.textContent = 'Falha ao enviar imagem: ' + uploadErr.message;
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'salvar';
+        return;
+      }
+      bannerUrl = supabaseClient.storage.from('banners').getPublicUrl(path).data.publicUrl;
+    }
+
+    const payload = {
+      title: form.title.value.trim(),
+      game: form.game.value,
+      rate: form.rate.value ? Number(form.rate.value) : null,
+      link: form.link.value.trim() || null,
+      banner_url: bannerUrl,
+      position: Number(form.position.value),
+      online: form.online.checked,
+      active: form.active.checked,
+    };
+
+    const id = form.destaque_id.value;
+    const { error } = id
+      ? await supabaseClient.from('destaques').update(payload).eq('id', id)
+      : await supabaseClient.from('destaques').insert(payload);
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'salvar';
+
+    if (error) {
+      errorEl.textContent = 'Falha ao salvar: ' + error.message;
+      errorEl.hidden = false;
+      return;
+    }
+
+    dialog.close();
+    refreshDashboard();
+  });
+}
+
 function bindDashboardEvents() {
   $('#pending-list').addEventListener('click', (e) => {
     const approveBtn = e.target.closest('[data-approve]');
@@ -383,7 +563,13 @@ function bindDashboardEvents() {
     if (deleteBtn) return deleteGuild(deleteBtn.dataset.deleteGuild, deleteBtn);
   });
 
+  $('#destaques-list').addEventListener('click', (e) => {
+    const deleteBtn = e.target.closest('[data-delete-destaque]');
+    if (deleteBtn) return deleteDestaque(deleteBtn.dataset.deleteDestaque, deleteBtn);
+  });
+
   bindEditDialog();
+  bindDestaqueDialog();
 }
 
 // ---- roteamento por estado de sessão --------------------------------------------------

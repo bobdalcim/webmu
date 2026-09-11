@@ -39,16 +39,17 @@ const FALLBACK_GUILDS = [
   { id: 'g1', name: 'Guild Fenix Wars', game: 'mu', serverName: 'Dragon MU Classic' },
 ];
 
-const DESTAQUES = [
-  { title: 'Legend MU Season 19', game: 'mu', rate: '1000', online: true },
-  { title: 'Priston World X10', game: 'priston', rate: '10', online: true },
-  { title: 'Ragna Ashes Reborn', game: 'ragnarok', rate: '5', online: false },
+const FALLBACK_DESTAQUES = [
+  { title: 'Legend MU Season 19', game: 'mu', rate: '1000', online: true, banner_url: null, link: null },
+  { title: 'Priston World X10', game: 'priston', rate: '10', online: true, banner_url: null, link: null },
+  { title: 'Ragna Ashes Reborn', game: 'ragnarok', rate: '5', online: false, banner_url: null, link: null },
 ];
 
 const PAGE_SIZE = 4;
 
 let SERVERS = FALLBACK_SERVERS;
 let GUILDS = FALLBACK_GUILDS;
+let DESTAQUES = FALLBACK_DESTAQUES;
 
 // ---- estado --------------------------------------------------------------
 
@@ -96,13 +97,15 @@ function getVoterId() {
 async function loadData() {
   if (!supabaseClient) return;
 
-  const [serversRes, guildsRes] = await Promise.all([
+  const [serversRes, guildsRes, destaquesRes] = await Promise.all([
     supabaseClient.from('servers').select('*').order('votes', { ascending: false }),
     supabaseClient.from('guilds').select('id, name, game, server:servers(name)'),
+    supabaseClient.from('destaques').select('*').eq('active', true).order('position', { ascending: true }),
   ]);
 
   if (serversRes.error) throw serversRes.error;
   if (guildsRes.error) throw guildsRes.error;
+  if (destaquesRes.error) throw destaquesRes.error;
 
   SERVERS = serversRes.data.map((s) => ({
     id: s.id,
@@ -120,6 +123,15 @@ async function loadData() {
     name: g.name,
     game: g.game,
     serverName: g.server ? g.server.name : '—',
+  }));
+
+  DESTAQUES = destaquesRes.data.map((d) => ({
+    title: d.title,
+    game: d.game,
+    rate: d.rate,
+    online: d.online,
+    banner_url: d.banner_url,
+    link: d.link,
   }));
 }
 
@@ -235,18 +247,29 @@ function render() {
   $$('.sidebar-item[data-phase]').forEach((el) => el.classList.toggle('active', state.phase.has(el.dataset.phase)));
 }
 
+function destaqueBannerHTML(d) {
+  if (d.banner_url) {
+    return `<img class="destaque-banner" src="${safeLink(d.banner_url)}" alt="${escapeHtml(d.title)}">`;
+  }
+  return `<div class="destaque-banner">banner 728×90</div>`;
+}
+
 function renderDestaques() {
   const grid = $('#destaques-grid');
+  if (!DESTAQUES.length) {
+    grid.innerHTML = '';
+    return;
+  }
   grid.innerHTML = DESTAQUES.map((d) => `
-    <div class="destaque-card bracketed">
-      <div class="destaque-banner">banner 728×90</div>
+    <a class="destaque-card bracketed" href="${safeLink(d.link)}" ${d.link ? 'target="_blank" rel="noopener"' : ''}>
+      ${destaqueBannerHTML(d)}
       <p class="destaque-title">${escapeHtml(d.title)}</p>
       <div class="destaque-meta">
         <span class="stat-chip">${GAMES[d.game]}</span>
-        <span class="stat-chip">rate x${d.rate}</span>
+        ${d.rate ? `<span class="stat-chip">rate x${d.rate}</span>` : ''}
         <span>${statusDot(d.online)}</span>
       </div>
-    </div>`).join('');
+    </a>`).join('');
 }
 
 // ---- eventos --------------------------------------------------------

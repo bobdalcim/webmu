@@ -16,15 +16,9 @@ python3 -m http.server 8080
 
 Depois abra `http://localhost:PORTA`.
 
-## Deploy no Vercel (grátis)
+## Deploy no Vercel
 
-1. Confirme que o repositório está no GitHub (`bobdalcim/webmu`, branch atual já enviada).
-2. Acesse [vercel.com](https://vercel.com) e faça login com sua conta do GitHub.
-3. Clique em **Add New → Project**.
-4. Selecione o repositório `webmu` na lista (autorize o Vercel a acessar seus repositórios se pedir).
-5. Em **Framework Preset**, deixe como **Other** (é HTML estático, não precisa de build command nem output directory).
-6. Clique em **Deploy**. Em ~30s o Vercel gera uma URL pública tipo `webmu.vercel.app`.
-7. Todo push na branch conectada gera um novo deploy automático.
+No ar em **https://webmu-amux.vercel.app/**. Projeto `weblamu`, conectado ao repositório `bobdalcim/webmu` (branch `claude/mmorpg-classifieds-html-bigei8` como Production Branch) — todo push nessa branch gera deploy automático, sem passo manual.
 
 Domínio próprio (opcional, grátis para o registro do Vercel, só paga se comprar domínio): **Project → Settings → Domains**.
 
@@ -33,9 +27,10 @@ Domínio próprio (opcional, grátis para o registro do Vercel, só paga se comp
 Projeto: `classifimudos` (org `bobdalcim's Org`), plano free ($0/mês), região `sa-east-1`.
 
 Tabelas:
-- `servers` — nome, jogo, rate, status online/offline, fase, tier, contagem de votos.
+- `servers` — nome, jogo, rate, status online/offline, fase, tier, contagem de votos, link.
 - `guilds` — nome, jogo, servidor associado (FK).
 - `votes` — um voto por `(server_id, voter_id)` (constraint única). `voter_id` é um UUID gerado no navegador e guardado no `localStorage` — evita voto duplicado do mesmo visitante sem precisar de login.
+- `destaques` — título, jogo, rate (opcional), link, `banner_url`, posição (ordem de exibição), online, `active` (só destaques ativos aparecem no site). Banners ficam no bucket público `banners` do Supabase Storage.
 
 Um trigger (`increment_server_votes`, `security definer`, sem `EXECUTE` público) incrementa `servers.votes` a cada `insert` em `votes` — o client nunca escreve na coluna `votes` diretamente.
 
@@ -62,6 +57,7 @@ select id, email from auth.users where email = 'seu-email@exemplo.com';
 ```
 
 3. Depois disso, logar em `/admin.html` mostra o painel:
+   - **Destaques da semana** — criar/editar/excluir os cards patrocinados do topo do site, com upload de banner (imagem, até 2MB, guardada no Supabase Storage) e controle de posição/online/ativo.
    - **Envios pendentes** — aprovar (publica em `servers`/`guilds`) ou rejeitar, servidor ou guild.
    - **Servidores publicados** — **editar** (nome, jogo, rate, fase, destaque/tier, link, votos, online/offline), ou excluir.
    - **Guilds publicadas** — excluir.
@@ -70,13 +66,9 @@ Dica opcional: se a confirmação de e-mail no cadastro incomodar (você é o ú
 
 Como funciona por baixo: a tabela `admins` (sem nenhuma policy pública) guarda quem é admin; uma função `is_admin()` no banco checa isso; e as policies de escrita em `servers`/`guilds`/`submissions` só liberam `insert`/`update`/`delete` pra quem `is_admin()` retorna verdadeiro. Alguém logado sem estar na tabela `admins` só vê a tela de "sem acesso".
 
-## Deploy: pendência do Vercel
-
-O ambiente onde estou rodando tem um **conector do Vercel instalado mas desconectado** (`needs_reconnect`). Pra eu conseguir fazer o deploy diretamente por aqui, reconecte-o nas configurações de conectores do Claude. Sem isso, segue o passo a passo manual da seção "Deploy no Vercel" acima (é rápido, uns 2 minutos).
-
 ## Próximos passos
 
-- Destaques pagos (planos) vindos de uma tabela `sponsored` em vez do array fixo em `script.js`.
+- Destaques pagos de verdade (cobrança/planos por dia) — hoje é só gestão manual pelo admin, sem pagamento.
 - Editar guilds no painel (hoje só dá pra excluir).
 - Paginação/busca no painel de moderação (hoje carrega tudo de uma vez — ok pro volume atual).
 
