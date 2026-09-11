@@ -116,6 +116,8 @@ async function loadData() {
     phase: s.phase,
     tier: s.tier,
     votes: s.votes,
+    link: s.link,
+    icon_url: s.icon_url,
   }));
 
   GUILDS = guildsRes.data.map((g) => ({
@@ -166,11 +168,18 @@ function tierClass(tier) {
   return '';
 }
 
+function serverIconHTML(s) {
+  if (s.icon_url) {
+    return `<img class="server-icon" src="${safeLink(s.icon_url)}" alt="">`;
+  }
+  return `<div class="server-icon"></div>`;
+}
+
 function serverRowHTML(s) {
   const voted = getVoted().has(s.id);
   return `
     <div class="server-row ${tierClass(s.tier)}" data-id="${s.id}">
-      <div class="server-icon"></div>
+      ${serverIconHTML(s)}
       <div>
         <p class="server-name">${escapeHtml(s.name)}</p>
         <div class="server-meta">

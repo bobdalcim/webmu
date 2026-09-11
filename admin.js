@@ -135,15 +135,21 @@ function pendingCardHTML(s) {
 }
 
 function serverRowAdminHTML(s) {
+  const thumb = s.icon_url
+    ? `<img src="${escapeHtml(s.icon_url)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);flex-shrink:0">`
+    : `<div style="width:36px;height:36px;border:1px dashed var(--border);flex-shrink:0"></div>`;
   return `
     <div class="admin-row" data-id="${s.id}">
-      <div class="admin-row-main">
-        <p class="server-name">${escapeHtml(s.name)}</p>
-        <div class="server-meta">
-          <span class="stat-chip">${GAMES[s.game] || s.game}</span>
-          <span class="stat-chip">rate x${s.rate}</span>
-          <span class="stat-chip">${s.votes} votos</span>
-          <span><span class="status-dot${s.online ? ' online' : ''}"></span>${s.online ? 'online' : 'offline'}</span>
+      <div class="admin-row-main" style="display:flex;align-items:center;gap:12px">
+        ${thumb}
+        <div>
+          <p class="server-name">${escapeHtml(s.name)}</p>
+          <div class="server-meta">
+            <span class="stat-chip">${GAMES[s.game] || s.game}</span>
+            <span class="stat-chip">rate x${s.rate}</span>
+            <span class="stat-chip">${s.votes} votos</span>
+            <span><span class="status-dot${s.online ? ' online' : ''}"></span>${s.online ? 'online' : 'offline'}</span>
+          </div>
         </div>
       </div>
       <div class="admin-row-actions">
@@ -357,11 +363,26 @@ function bindEditDialog() {
   const dialog = $('#edit-server-dialog');
   const form = $('#edit-server-form');
   const errorEl = $('#edit-error');
+  const preview = $('#server-icon-preview');
+  const fileInput = form.icon_file;
+  let currentIconUrl = null;
+
+  function setPreview(url) {
+    currentIconUrl = url || null;
+    if (currentIconUrl) {
+      preview.src = currentIconUrl;
+      preview.style.display = 'block';
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+    }
+  }
 
   function openEditDialog(id) {
     const server = SERVERS_CACHE.find((s) => s.id === id);
     if (!server) return;
     errorEl.hidden = true;
+    fileInput.value = '';
     form.server_id.value = server.id;
     form.name.value = server.name;
     form.game.value = server.game;
@@ -371,8 +392,24 @@ function bindEditDialog() {
     form.link.value = server.link || '';
     form.votes.value = server.votes;
     form.online.checked = server.online;
+    setPreview(server.icon_url);
     dialog.showModal();
   }
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      errorEl.textContent = 'Imagem maior que 2MB. Escolha um arquivo menor.';
+      errorEl.hidden = false;
+      fileInput.value = '';
+      return;
+    }
+    errorEl.hidden = true;
+    const reader = new FileReader();
+    reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  });
 
   $$('[data-close-edit]').forEach((el) => el.addEventListener('click', () => dialog.close()));
   dialog.addEventListener('click', (e) => {
@@ -390,6 +427,21 @@ function bindEditDialog() {
     const submitBtn = $('#edit-submit');
     submitBtn.disabled = true;
 
+    let iconUrl = currentIconUrl;
+    const file = fileInput.files[0];
+
+    if (file) {
+      const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const { error: uploadErr } = await supabaseClient.storage.from('icons').upload(path, file, { upsert: false });
+      if (uploadErr) {
+        errorEl.textContent = 'Falha ao enviar imagem: ' + uploadErr.message;
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+        return;
+      }
+      iconUrl = supabaseClient.storage.from('icons').getPublicUrl(path).data.publicUrl;
+    }
+
     const payload = {
       name: form.name.value.trim(),
       game: form.game.value,
@@ -399,6 +451,7 @@ function bindEditDialog() {
       link: form.link.value.trim() || null,
       votes: Number(form.votes.value),
       online: form.online.checked,
+      icon_url: iconUrl,
     };
 
     const { error } = await supabaseClient.from('servers').update(payload).eq('id', form.server_id.value);
