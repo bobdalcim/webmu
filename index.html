@@ -4,362 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Classificados MMORPG — Servidores Privados</title>
+<meta name="description" content="Encontre e divulgue servidores privados de MMORPG: Mu Online, Priston Tale, Ragnarok, Tibia e mais.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg-void: #121218;
-    --bg-panel: #1b1b24;
-    --bg-panel-raised: #23232f;
-    --ink: #e9e5d8;
-    --ink-dim: #8d8fa3;
-    --ink-faint: #55566a;
-    --gold: #c9973f;
-    --gold-dim: #7a5f2c;
-    --rare: #5b8dd6;
-    --epic: #9b6bd6;
-    --online: #5fb86a;
-    --offline: #55566a;
-    --border: rgba(233, 229, 216, 0.10);
-    --border-strong: rgba(233, 229, 216, 0.22);
-    --font-display: 'Cormorant Garamond', serif;
-    --font-mono: 'IBM Plex Mono', monospace;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    font-family: var(--font-mono);
-    background: var(--bg-void);
-    background-image:
-      radial-gradient(circle at 15% 0%, rgba(201, 151, 63, 0.05), transparent 45%),
-      radial-gradient(circle at 85% 20%, rgba(91, 141, 214, 0.04), transparent 40%);
-    color: var(--ink);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  a { color: inherit; text-decoration: none; }
-
-  .page {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 24px 20px 60px;
-  }
-
-  /* corner bracket motif — reused as the one signature device */
-  .bracketed {
-    position: relative;
-  }
-  .bracketed::before,
-  .bracketed::after {
-    content: "";
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border: 1px solid var(--border-strong);
-  }
-  .bracketed::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
-  .bracketed::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
-
-  /* HEADER */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 26px;
-  }
-  .logo {
-    font-family: var(--font-display);
-    font-size: 26px;
-    font-weight: 600;
-    font-style: italic;
-    letter-spacing: 0.3px;
-    color: var(--ink);
-  }
-  .logo span { color: var(--gold); font-style: normal; }
-
-  nav { display: flex; gap: 22px; flex-wrap: wrap; }
-  nav a {
-    font-size: 11px;
-    letter-spacing: 0.4px;
-    color: var(--ink-dim);
-    padding-bottom: 2px;
-    border-bottom: 1px solid transparent;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-  nav a:hover { color: var(--ink); border-color: var(--border-strong); }
-
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .search-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
-    padding: 7px 12px;
-    font-size: 11px;
-    color: var(--ink-faint);
-    min-width: 190px;
-  }
-  .search-box::before { content: "⌕"; color: var(--ink-dim); }
-
-  .btn {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.3px;
-    padding: 9px 16px;
-    cursor: pointer;
-    border: 1px solid var(--border-strong);
-    background: transparent;
-    color: var(--ink);
-    transition: border-color 0.15s ease, background 0.15s ease;
-  }
-  .btn:hover { border-color: var(--ink-dim); }
-  .btn-gold {
-    background: var(--gold);
-    border-color: var(--gold);
-    color: #1a1408;
-    font-weight: 500;
-  }
-  .btn-gold:hover { background: #dba84c; border-color: #dba84c; }
-
-  /* FILTER BAR */
-  .filters {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
-  }
-  .filter-pill {
-    font-size: 11px;
-    color: var(--ink-dim);
-    border: 1px solid var(--border);
-    padding: 6px 13px;
-    cursor: pointer;
-  }
-  .filter-pill::before { content: "["; color: var(--ink-faint); margin-right: 2px; }
-  .filter-pill::after { content: "]"; color: var(--ink-faint); margin-left: 2px; }
-  .filter-pill.active {
-    color: var(--gold);
-    border-color: var(--gold-dim);
-  }
-  .filter-pill.active::before,
-  .filter-pill.active::after { color: var(--gold-dim); }
-
-  /* SECTION TITLES */
-  section { margin-bottom: 40px; }
-  .section-title {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-style: italic;
-    color: var(--ink);
-    margin: 0 0 16px;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .section-title small {
-    font-family: var(--font-mono);
-    font-style: normal;
-    font-size: 10px;
-    letter-spacing: 0.5px;
-    color: var(--ink-faint);
-  }
-
-  /* DESTAQUES */
-  .destaques-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .destaque-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-left: 2px solid var(--gold);
-    padding: 16px 18px;
-  }
-  .destaque-banner {
-    height: 76px;
-    background:
-      repeating-linear-gradient(135deg, rgba(201,151,63,0.05), rgba(201,151,63,0.05) 8px, transparent 8px, transparent 16px);
-    border: 1px dashed var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: var(--ink-faint);
-    margin-bottom: 14px;
-  }
-  .destaque-title {
-    font-family: var(--font-display);
-    font-size: 19px;
-    font-weight: 600;
-    margin: 0 0 6px;
-    color: var(--gold);
-  }
-  .destaque-meta { font-size: 11px; color: var(--ink-dim); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .stat-chip {
-    border: 1px solid var(--border);
-    padding: 2px 8px;
-    font-size: 10px;
-    color: var(--ink-dim);
-  }
-
-  .status-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    display: inline-block; margin-right: 5px;
-    background: var(--offline);
-  }
-  .status-dot.online { background: var(--online); box-shadow: 0 0 4px rgba(95,184,106,0.6); }
-
-  /* MAIN LAYOUT */
-  .main-layout {
-    display: grid;
-    grid-template-columns: 210px 1fr;
-    gap: 26px;
-  }
-  .sidebar {
-    border: 1px solid var(--border);
-    padding: 18px;
-    height: fit-content;
-  }
-  .sidebar-group { margin-bottom: 22px; }
-  .sidebar-group:last-child { margin-bottom: 0; }
-  .sidebar-group-title {
-    font-size: 10px;
-    letter-spacing: 0.6px;
-    color: var(--ink-faint);
-    margin-bottom: 10px;
-    text-transform: uppercase;
-  }
-  .sidebar-item {
-    font-size: 11px;
-    color: var(--ink-dim);
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
-  }
-  .sidebar-item:last-child { border-bottom: none; }
-  .sidebar-item:hover { color: var(--ink); }
-  .sidebar-item span:last-child { color: var(--ink-faint); }
-
-  .server-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .server-row {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-left: 2px solid var(--ink-faint);
-    padding: 14px 18px;
-    display: grid;
-    grid-template-columns: 46px 1fr auto auto;
-    align-items: center;
-    gap: 16px;
-    transition: border-color 0.15s ease, background 0.15s ease;
-  }
-  .server-row:hover { background: var(--bg-panel-raised); }
-  .server-row.tier-legend { border-left-color: var(--gold); }
-  .server-row.tier-rare { border-left-color: var(--rare); }
-
-  .server-icon {
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--border);
-    background: repeating-linear-gradient(135deg, rgba(233,229,216,0.04), rgba(233,229,216,0.04) 5px, transparent 5px, transparent 10px);
-  }
-  .server-name { font-size: 13.5px; font-weight: 500; margin: 0 0 4px; color: var(--ink); }
-  .tier-legend .server-name { color: var(--gold); }
-  .tier-rare .server-name { color: var(--rare); }
-  .server-meta { font-size: 11px; color: var(--ink-dim); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-
-  .server-votes {
-    font-size: 10px;
-    color: var(--ink-dim);
-    border: 1px solid var(--border);
-    padding: 6px 10px;
-    text-align: center;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-  .server-votes b { display: block; font-size: 13px; color: var(--ink); font-weight: 500; }
-  .server-votes:hover { border-color: var(--border-strong); color: var(--ink); }
-
-  /* GUILD ROW */
-  .guild-row {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-left: 2px solid var(--epic);
-    padding: 14px 18px;
-    display: grid;
-    grid-template-columns: 40px 1fr auto;
-    align-items: center;
-    gap: 16px;
-  }
-  .guild-icon {
-    width: 34px; height: 34px;
-    border: 1px solid var(--border);
-    background: repeating-linear-gradient(135deg, rgba(155,107,214,0.10), rgba(155,107,214,0.10) 5px, transparent 5px, transparent 10px);
-  }
-  .guild-row .server-name { color: var(--epic); }
-
-  .load-more {
-    text-align: center;
-    padding: 14px;
-    border: 1px dashed var(--border-strong);
-    color: var(--ink-dim);
-    font-size: 11px;
-    cursor: pointer;
-    margin-top: 4px;
-  }
-  .load-more:hover { color: var(--ink); border-color: var(--ink-dim); }
-
-  /* CTA FINAL */
-  .cta-final {
-    border: 1px solid var(--border-strong);
-    padding: 40px;
-    text-align: center;
-    background: var(--bg-panel);
-  }
-  .cta-final h3 {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: 26px;
-    font-weight: 600;
-    margin: 0 0 10px;
-    color: var(--ink);
-  }
-  .cta-final p { margin: 0 0 22px; font-size: 12px; color: var(--ink-dim); }
-
-  footer {
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
-    margin-top: 40px;
-    font-size: 10.5px;
-    color: var(--ink-faint);
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  footer a { color: var(--ink-faint); }
-  footer a:hover { color: var(--ink-dim); }
-
-  @media (max-width: 800px) {
-    .main-layout { grid-template-columns: 1fr; }
-    .server-row { grid-template-columns: 40px 1fr; }
-    .server-votes, .server-row > .btn { display: none; }
-    header { flex-direction: column; align-items: flex-start; }
-  }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -375,7 +24,9 @@
       <a href="#">Anunciar</a>
     </nav>
     <div class="header-right">
-      <div class="search-box">buscar servidor, jogo...</div>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="buscar servidor, jogo...">
+      </div>
       <a class="btn" href="#">Entrar</a>
       <a class="btn btn-gold" href="#">Anunciar servidor</a>
     </div>
@@ -383,50 +34,18 @@
 
   <!-- FILTROS POR JOGO -->
   <div class="filters">
-    <div class="filter-pill active">Mu Online</div>
-    <div class="filter-pill">Priston Tale</div>
-    <div class="filter-pill">Ragnarok</div>
-    <div class="filter-pill">Tibia</div>
-    <div class="filter-pill">Perfect World</div>
-    <div class="filter-pill">todos os jogos</div>
+    <button class="filter-pill" data-game="mu">Mu Online</button>
+    <button class="filter-pill" data-game="priston">Priston Tale</button>
+    <button class="filter-pill" data-game="ragnarok">Ragnarok</button>
+    <button class="filter-pill" data-game="tibia">Tibia</button>
+    <button class="filter-pill" data-game="pw">Perfect World</button>
+    <button class="filter-pill" data-game="all">todos os jogos</button>
   </div>
 
   <!-- DESTAQUES -->
   <section>
     <p class="section-title">Destaques da semana <small>patrocinado</small></p>
-    <div class="destaques-grid">
-
-      <div class="destaque-card bracketed">
-        <div class="destaque-banner">banner 728×90</div>
-        <p class="destaque-title">Legend MU Season 19</p>
-        <div class="destaque-meta">
-          <span class="stat-chip">Mu Online</span>
-          <span class="stat-chip">rate x1000</span>
-          <span><span class="status-dot online"></span>online</span>
-        </div>
-      </div>
-
-      <div class="destaque-card bracketed">
-        <div class="destaque-banner">banner 728×90</div>
-        <p class="destaque-title">Priston World X10</p>
-        <div class="destaque-meta">
-          <span class="stat-chip">Priston Tale</span>
-          <span class="stat-chip">rate x10</span>
-          <span><span class="status-dot online"></span>online</span>
-        </div>
-      </div>
-
-      <div class="destaque-card bracketed">
-        <div class="destaque-banner">banner 728×90</div>
-        <p class="destaque-title">Ragna Ashes Reborn</p>
-        <div class="destaque-meta">
-          <span class="stat-chip">Ragnarok</span>
-          <span class="stat-chip">rate x5</span>
-          <span><span class="status-dot"></span>offline</span>
-        </div>
-      </div>
-
-    </div>
+    <div class="destaques-grid" id="destaques-grid"></div>
   </section>
 
   <!-- LISTAGEM + SIDEBAR -->
@@ -437,85 +56,34 @@
       <aside class="sidebar bracketed">
         <div class="sidebar-group">
           <div class="sidebar-group-title">Jogo</div>
-          <div class="sidebar-item"><span>Mu Online</span><span>124</span></div>
-          <div class="sidebar-item"><span>Priston Tale</span><span>38</span></div>
-          <div class="sidebar-item"><span>Ragnarok</span><span>57</span></div>
-          <div class="sidebar-item"><span>Tibia</span><span>22</span></div>
+          <button class="sidebar-item" data-game="mu"><span>Mu Online</span><span>124</span></button>
+          <button class="sidebar-item" data-game="priston"><span>Priston Tale</span><span>38</span></button>
+          <button class="sidebar-item" data-game="ragnarok"><span>Ragnarok</span><span>57</span></button>
+          <button class="sidebar-item" data-game="tibia"><span>Tibia</span><span>22</span></button>
         </div>
         <div class="sidebar-group">
           <div class="sidebar-group-title">Rate de EXP</div>
-          <div class="sidebar-item"><span>baixo (x1–x50)</span></div>
-          <div class="sidebar-item"><span>médio (x50–x1000)</span></div>
-          <div class="sidebar-item"><span>alto (x1000+)</span></div>
+          <button class="sidebar-item" data-rate="baixo"><span>baixo (x1–x50)</span></button>
+          <button class="sidebar-item" data-rate="medio"><span>médio (x50–x1000)</span></button>
+          <button class="sidebar-item" data-rate="alto"><span>alto (x1000+)</span></button>
         </div>
         <div class="sidebar-group">
           <div class="sidebar-group-title">Status</div>
-          <div class="sidebar-item"><span>online</span></div>
-          <div class="sidebar-item"><span>offline</span></div>
+          <button class="sidebar-item" data-status="online"><span>online</span></button>
+          <button class="sidebar-item" data-status="offline"><span>offline</span></button>
         </div>
         <div class="sidebar-group">
           <div class="sidebar-group-title">Fase</div>
-          <div class="sidebar-item"><span>lançamento</span></div>
-          <div class="sidebar-item"><span>open beta</span></div>
-          <div class="sidebar-item"><span>mature / estável</span></div>
+          <button class="sidebar-item" data-phase="lancamento"><span>lançamento</span></button>
+          <button class="sidebar-item" data-phase="open-beta"><span>open beta</span></button>
+          <button class="sidebar-item" data-phase="maturo"><span>mature / estável</span></button>
         </div>
       </aside>
 
-      <div class="server-list">
+      <div class="server-list" id="server-list"></div>
 
-        <div class="server-row tier-legend">
-          <div class="server-icon"></div>
-          <div>
-            <p class="server-name">Dragon MU Classic</p>
-            <div class="server-meta"><span class="stat-chip">Mu Online</span><span class="stat-chip">rate x1000</span><span><span class="status-dot online"></span>online</span></div>
-          </div>
-          <div class="server-votes">votar<b>1245</b></div>
-          <a class="btn" href="#">ver detalhes</a>
-        </div>
-
-        <div class="server-row">
-          <div class="server-icon"></div>
-          <div>
-            <p class="server-name">Old School Priston</p>
-            <div class="server-meta"><span class="stat-chip">Priston Tale</span><span class="stat-chip">rate x5</span><span><span class="status-dot"></span>offline</span></div>
-          </div>
-          <div class="server-votes">votar<b>340</b></div>
-          <a class="btn" href="#">ver detalhes</a>
-        </div>
-
-        <div class="guild-row bracketed">
-          <div class="guild-icon"></div>
-          <div>
-            <p class="server-name">Guild Fenix Wars</p>
-            <div class="server-meta"><span class="stat-chip">guild</span><span>joga em Dragon MU Classic</span></div>
-          </div>
-          <a class="btn" href="#">ver guild</a>
-        </div>
-
-        <div class="server-row tier-rare">
-          <div class="server-icon"></div>
-          <div>
-            <p class="server-name">Ragna Genesis X10</p>
-            <div class="server-meta"><span class="stat-chip">Ragnarok</span><span class="stat-chip">rate x10</span><span><span class="status-dot online"></span>online</span></div>
-          </div>
-          <div class="server-votes">votar<b>689</b></div>
-          <a class="btn" href="#">ver detalhes</a>
-        </div>
-
-        <div class="server-row">
-          <div class="server-icon"></div>
-          <div>
-            <p class="server-name">Tibia Global Reborn</p>
-            <div class="server-meta"><span class="stat-chip">Tibia</span><span class="stat-chip">rate x3</span><span><span class="status-dot online"></span>online</span></div>
-          </div>
-          <div class="server-votes">votar<b>512</b></div>
-          <a class="btn" href="#">ver detalhes</a>
-        </div>
-
-        <div class="load-more">carregar mais servidores</div>
-
-      </div>
     </div>
+    <button class="load-more" id="load-more">carregar mais servidores</button>
   </section>
 
   <!-- CTA FINAL -->
@@ -534,5 +102,6 @@
 
 </div>
 
+<script src="script.js"></script>
 </body>
 </html>
