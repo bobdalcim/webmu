@@ -2,7 +2,7 @@
 
 Classificados de servidores privados de MMORPG (Mu Online, Priston Tale, Ragnarok, Tibia, Perfect World).
 
-Site estático — HTML + CSS + JS puro, sem build, sem dependências. Os dados (servidores, votos, guilds) hoje vivem em `script.js`; filtros, busca e votação já funcionam no navegador.
+Site estático — HTML + CSS + JS puro, sem build. Servidores, guilds e votos ficam no Supabase (Postgres); o front consome via `@supabase/supabase-js` direto do client. Filtros, busca e votação funcionam de ponta a ponta.
 
 ## Rodar local
 
@@ -28,11 +28,25 @@ Depois abra `http://localhost:PORTA`.
 
 Domínio próprio (opcional, grátis para o registro do Vercel, só paga se comprar domínio): **Project → Settings → Domains**.
 
-## Próximos passos (quando quiser dados reais / persistentes)
+## Backend (Supabase)
 
-Hoje os votos ficam salvos só no `localStorage` do navegador (cada visitante vota uma vez, mas o contador não é compartilhado entre pessoas). Para votos, servidores e guilds compartilhados entre todos os visitantes, dá para plugar um backend grátis:
+Projeto: `classifimudos` (org `bobdalcim's Org`), plano free ($0/mês), região `sa-east-1`.
 
-- **Supabase** (free tier: banco Postgres + API REST/Realtime prontos) para guardar servidores, votos e guilds de verdade.
-- **Vercel Serverless Functions** ou o próprio SDK do Supabase no client, para não expor lógica sensível.
+Tabelas:
+- `servers` — nome, jogo, rate, status online/offline, fase, tier, contagem de votos.
+- `guilds` — nome, jogo, servidor associado (FK).
+- `votes` — um voto por `(server_id, voter_id)` (constraint única). `voter_id` é um UUID gerado no navegador e guardado no `localStorage` — evita voto duplicado do mesmo visitante sem precisar de login.
 
-Posso configurar isso quando quiser — é só pedir.
+Um trigger (`increment_server_votes`, `security definer`, sem `EXECUTE` público) incrementa `servers.votes` a cada `insert` em `votes` — o client nunca escreve na coluna `votes` diretamente.
+
+RLS: leitura pública em `servers`/`guilds`/`votes`; inserção pública só em `votes`. A chave usada no client (`script.js`) é a `anon`/`publishable`, feita para ser pública — a segurança vem das políticas de RLS, não do segredo da chave.
+
+Para mexer no schema depois, use o painel do Supabase (SQL Editor) ou me peça para rodar uma migration.
+
+## Próximos passos
+
+- Formulário de "Anunciar servidor" gravando direto no Supabase (hoje é só um link/CTA visual).
+- Painel de moderação para aprovar servidores/guilds enviados por usuários.
+- Destaques pagos (planos) vindos de uma tabela `sponsored` em vez do array fixo em `script.js`.
+
+Posso configurar qualquer um desses quando quiser — é só pedir.

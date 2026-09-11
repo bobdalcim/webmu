@@ -1,6 +1,17 @@
-// ---- dados (mock) ------------------------------------------------------
-// Quando o backend (Supabase) entrar, isso vira um fetch() na API em vez
-// de um array fixo — o resto do código (render/filtros/votos) não muda.
+// ---- Supabase --------------------------------------------------------
+// Chave "anon"/"publishable" — feita para ficar no client, protegida pelas
+// políticas de RLS do banco (só permitem leitura pública e inserção de votos).
+
+const SUPABASE_URL = 'https://qgrdlglzadsriluzeren.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_-s554Nv0F7DFE0aXn3jWwA_ti6iXccm';
+
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// ---- dados de fallback --------------------------------------------------
+// Usados só se o Supabase estiver fora do ar / sem internet, para o site
+// nunca ficar em branco.
 
 const GAMES = {
   mu: 'Mu Online',
@@ -22,7 +33,7 @@ const PHASES = {
   maturo: 'mature / estável',
 };
 
-let SERVERS = [
+const FALLBACK_SERVERS = [
   { id: 's1', name: 'Dragon MU Classic', game: 'mu', rate: 1000, online: true, phase: 'maturo', tier: 'legend', votes: 1245 },
   { id: 's2', name: 'Old School Priston', game: 'priston', rate: 5, online: false, phase: 'maturo', tier: 'normal', votes: 340 },
   { id: 's3', name: 'Ragna Genesis X10', game: 'ragnarok', rate: 10, online: true, phase: 'open-beta', tier: 'rare', votes: 689 },
@@ -33,7 +44,7 @@ let SERVERS = [
   { id: 's8', name: 'Priston World X10', game: 'priston', rate: 10, online: true, phase: 'lancamento', tier: 'rare', votes: 415 },
 ];
 
-const GUILDS = [
+const FALLBACK_GUILDS = [
   { id: 'g1', name: 'Guild Fenix Wars', game: 'mu', serverName: 'Dragon MU Classic' },
 ];
 
@@ -44,6 +55,9 @@ const DESTAQUES = [
 ];
 
 const PAGE_SIZE = 4;
+
+let SERVERS = FALLBACK_SERVERS;
+let GUILDS = FALLBACK_GUILDS;
 
 // ---- estado --------------------------------------------------------------
 
@@ -70,6 +84,52 @@ function saveVoted(set) {
   } catch {
     /* localStorage indisponível (modo privado etc.) — segue sem persistir */
   }
+}
+
+const VOTER_KEY = 'classifimudos:voter_id';
+function getVoterId() {
+  try {
+    let id = localStorage.getItem(VOTER_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(VOTER_KEY, id);
+    }
+    return id;
+  } catch {
+    return 'anon-' + Math.random().toString(36).slice(2);
+  }
+}
+
+// ---- carregar dados do Supabase --------------------------------------------------
+
+async function loadData() {
+  if (!supabaseClient) return;
+
+  const [serversRes, guildsRes] = await Promise.all([
+    supabaseClient.from('servers').select('*').order('votes', { ascending: false }),
+    supabaseClient.from('guilds').select('id, name, game, server:servers(name)'),
+  ]);
+
+  if (serversRes.error) throw serversRes.error;
+  if (guildsRes.error) throw guildsRes.error;
+
+  SERVERS = serversRes.data.map((s) => ({
+    id: s.id,
+    name: s.name,
+    game: s.game,
+    rate: s.rate,
+    online: s.online,
+    phase: s.phase,
+    tier: s.tier,
+    votes: s.votes,
+  }));
+
+  GUILDS = guildsRes.data.map((g) => ({
+    id: g.id,
+    name: g.name,
+    game: g.game,
+    serverName: g.server ? g.server.name : '—',
+  }));
 }
 
 // ---- helpers de DOM --------------------------------------------------------
@@ -189,6 +249,42 @@ function toggleSetFilter(set, value) {
   else set.add(value);
 }
 
+async function handleVote(id, btn) {
+  const voted = getVoted();
+  if (voted.has(id)) return;
+
+  const server = SERVERS.find((s) => s.id === id);
+  if (!server) return;
+
+  btn.disabled = true;
+
+  if (!supabaseClient) {
+    server.votes += 1;
+    voted.add(id);
+    saveVoted(voted);
+    render();
+    return;
+  }
+
+  const { error } = await supabaseClient.from('votes').insert({
+    server_id: id,
+    voter_id: getVoterId(),
+  });
+
+  if (error && error.code !== '23505') {
+    // erro real (rede, RLS, etc.) — libera o botão pra tentar de novo
+    console.error('Falha ao votar:', error);
+    btn.disabled = false;
+    return;
+  }
+
+  // sucesso, ou 23505 = já tinha votado antes (unique constraint) — sincroniza local
+  if (!error) server.votes += 1;
+  voted.add(id);
+  saveVoted(voted);
+  render();
+}
+
 function bindEvents() {
   $$('.filter-pill[data-game]').forEach((el) => {
     el.addEventListener('click', () => {
@@ -249,20 +345,19 @@ function bindEvents() {
   $('#server-list').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-vote]');
     if (!btn) return;
-    const id = btn.dataset.vote;
-    const voted = getVoted();
-    if (voted.has(id)) return;
-    const server = SERVERS.find((s) => s.id === id);
-    if (!server) return;
-    server.votes += 1;
-    voted.add(id);
-    saveVoted(voted);
-    render();
+    handleVote(btn.dataset.vote, btn);
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   renderDestaques();
   bindEvents();
   render();
+
+  try {
+    await loadData();
+    render();
+  } catch (err) {
+    console.error('Não foi possível carregar dados do Supabase, usando dados locais:', err);
+  }
 });
